@@ -3,3 +3,5 @@ fpdf==1.7.2
 mindee==4.22.0
 google-generativeai==0.8.5
 python-dotenv==1.0.1
+PyYAML==6.0.2
+pydantic-settings
