@@ -4,9 +4,16 @@ from functools import partial
 
 
 async def handle_user_question(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, genai
+    update: Update, context: ContextTypes.DEFAULT_TYPE, genai , user_states
 ):
     user_message = update.message.text
+    user_id = update.effective_user.id
+    state = user_states.get(user_id)
+
+    # Ігнорувати питання, якщо користувач у важливому процесі
+    if state in ["waiting_passport", "waiting_car_doc"]:
+        await update.message.reply_text("Будь ласка, завершіть поточний процес перед тим, як задавати питання.")
+        return
 
     # Ігноруємо команди типу /start
     if user_message.startswith("/"):
