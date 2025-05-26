@@ -56,7 +56,7 @@ app.add_handler(
 app.add_handler(CallbackQueryHandler(handle_file_generation, pattern="^price_"))
 app.add_handler(
     MessageHandler(
-        filters.TEXT & ~filters.COMMAND, partial(handle_user_question, genai=genai , user_states=user_states)
+        filters.TEXT & ~filters.COMMAND, partial(handle_user_question, genai=genai)
     )
 )
 
