@@ -44,6 +44,7 @@ app.add_handler(
             mindee_client=mindee_client,
             user_states=user_states,
             user_photos=user_photos,
+            genai=genai
         ),
     )
 )

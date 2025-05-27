@@ -3,6 +3,8 @@ from functools import partial
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from mindee import AsyncPredictResponse, product
 from telegram.ext import ContextTypes
+from PIL import Image
+import json
 
 
 async def handle_photo(
@@ -11,6 +13,7 @@ async def handle_photo(
     mindee_client,
     user_states: dict,
     user_photos: dict,
+    genai,
 ):
     user_id = update.message.from_user.id
     state = user_states.get(user_id)
@@ -58,7 +61,6 @@ async def handle_photo(
                 await update.message.reply_text(
                     f"⚠️ Сталася помилка при обробці документа:\n{e}"
                 )
-            return
 
         passport_data = result.document.inference.prediction
         full_name = (
@@ -75,23 +77,31 @@ async def handle_photo(
             else "N/A"
         )
 
-        # 2. mock car passport data
-        car_doc_mock = {
-            "Номер авто": "AA1234BB",
-            "VIN": "WVWZZZ1JZXW000001",
-            "Марка": "Volkswagen",
-            "Модель": "Golf",
-            "Рік випуску": "2019",
-        }
+        img = Image.open(path)
 
+        model = genai.GenerativeModel("gemini-2.0-flash")
+
+        # Запит
+        response = model.generate_content(
+            [
+                img,
+                "Витягни дані з цього тех паспорту та поверни як Python словник. Поля: registration_date, date_of_first_registration, registration_number",
+            ]
+        )
+        clean_response = response.text.replace("```python", "").replace("```", "")
+        car_data_dict = json.loads(clean_response)
+
+        img.close()
         # result that sends to user
         result_text = (
             f"*Паспорт:*\n"
             f"- ПІБ: {full_name}\n"
             f"- Дата народження: {birth_date}\n"
             f"- Номер паспорта: {passport_number}\n\n"
-            f"*Техпаспорт (мок):*\n"
-            + "\n".join([f"- {k}: {v}" for k, v in car_doc_mock.items()])
+            f"*Техпаспорт:*\n"
+            f"Дата реєстрації: {car_data_dict['registration_date']}\n"
+            f"Рік випуску: {car_data_dict['date_of_first_registration']}\n"
+            f"Реєстраційний номер: {car_data_dict['registration_number']}\n"
         )
 
         context.user_data["last_result"] = result_text
