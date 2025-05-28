@@ -61,6 +61,7 @@ async def handle_photo(
                 await update.message.reply_text(
                     f"⚠️ Сталася помилка при обробці документа:\n{e}"
                 )
+                return
 
         passport_data = result.document.inference.prediction
         full_name = (
@@ -89,7 +90,33 @@ async def handle_photo(
             ]
         )
         clean_response = response.text.replace("```python", "").replace("```", "")
-        car_data_dict = json.loads(clean_response)
+
+        try:
+            car_data_dict = json.loads(clean_response)
+
+        except Exception as e:
+            user_states[user_id] = "waiting_car_doc"
+
+            await update.message.reply_text(
+                "⚠️ Не вдалося розпізнати всі необхідні дані з техпаспорту. "
+                "Будь ласка, надішліть фото ще раз, переконавшись що документ чіткий та всі дані видно."
+            )
+            return
+
+        required_fields = [
+            "registration_date",
+            "date_of_first_registration",
+            "registration_number",
+        ]
+        print(car_data_dict)
+        if not all(field in car_data_dict for field in required_fields):
+            user_states[user_id] = "waiting_car_doc"
+
+            await update.message.reply_text(
+                "⚠️ Не вдалося розпізнати всі необхідні дані з техпаспорту. "
+                "Будь ласка, надішліть фото ще раз, переконавшись що документ чіткий та всі дані видно."
+            )
+            return
 
         img.close()
         # result that sends to user
